@@ -7,11 +7,35 @@ mongoose.connect(connectionString).then(()=>{
     const cors = require('cors');
     const app = express();
     const prods = require('./prodSchema');
+    const user = require('./userSchema');
+
+    app.use(cors({
+        origin: "http://localhost:3000"
+    }));
+
+    app.use(bodyParser.urlencoded());
+
+    app.get("/user/:user",async (req,res)=>{
+        let data = await user.findOne({username:req.params.user});
+        console.log(data);
+        if(data==null)
+            res.send({status:"failed"});
+        else
+            res.send(data);
+    });
+    app.post("/user",async (req,res)=>{
+        let {username,password} = req.body;
+        console.log(req.body);
+        
+        let data = user({username:username, password:password,prod:[]});
+        await data.save();
+        res.send("saved data");
+    });
 
     app.get("/product",async (req,res)=> {
         try {
             const product = await prods.find();  // Use 'prods' to access the model
-            res.send(product);
+            res.send(JSON.stringify(product));
         } catch (err) {
             res.status(500).send("Error fetching products");
         }
@@ -31,9 +55,13 @@ mongoose.connect(connectionString).then(()=>{
         }
     });
 
-    // app.post("/",(req,res)=>{
-
-    // });
+    app.post("/product", async (req,res)=>{
+        const products = new prods ({
+            ...req.body
+        })
+        await products.save();
+        res.send(products);
+    });
     // app.patch("/",(req,res)=>{
 
     // });
